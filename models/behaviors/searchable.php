@@ -12,11 +12,11 @@ class SearchableBehavior extends ModelBehavior {
 	function setup(&$model, $settings = array()) {
 		// no special setup required	
 		$this->settings[$model->name] = $settings;
-		$this->model = &$model;	
+		$this->model = &$model;
 	}
 	
-	function indexData() {
-		if (is_callable(array($this->model, 'indexData'))) {
+	function _indexData() {
+		if (method_exists($this->model, 'indexData')) {
 			return $this->model->indexData();
 		} else {
 			return $this->_index();
@@ -30,7 +30,7 @@ class SearchableBehavior extends ModelBehavior {
 			$this->_indexForId = 0;
 		}
 		if ($this->_indexForId == 0 || $this->rebuildOnUpdate) {
-			$this->_index = $this->indexData();
+			$this->_index = $this->_indexData();
 		}
 		return true;
 	}
