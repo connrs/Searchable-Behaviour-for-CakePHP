@@ -32,7 +32,8 @@ class SearchIndex extends AppModel {
 		if (!empty($this->models)) {
 			$models_condition = array();
 			foreach ($this->models as $model) {
-				$models_condition[] = $model . '.id IS NOT NULL'; 
+				$Model = ClassRegistry::init($model);
+				$models_condition[] = $model . '.'.$Model->primaryKey.' IS NOT NULL'; 
 			}
 		}
 		

@@ -4,13 +4,15 @@ class SearchableBehavior extends ModelBehavior {
 	var $model = null;
 	
 	var $_index = false;
-	var $_indexForId = false;
-	var $rebuildOnUpdate = false;
+	var $foreignKey = false;
+	var $_defaults = array(
+		'rebuildOnUpdate' => true
+	);
 	
 	var $SearchIndex = null;
 
 	function setup(&$model, $settings = array()) {
-		// no special setup required	
+		$settings = array_merge($this->_defaults, $settings);	
 		$this->settings[$model->name] = $settings;
 		$this->model = &$model;
 	}
@@ -24,12 +26,12 @@ class SearchableBehavior extends ModelBehavior {
 	}
 	
 	function beforeSave() {
-		if (isset($this->model->data[$this->model->name]['id']) && $this->model->data[$this->model->name]['id']!=0) {
-			$this->_indexForId = $this->model->data[$this->model->name]['id'];		
+		if ($this->model->id) {
+			$this->foreignKey = $this->model->id;		
 		} else {
-			$this->_indexForId = 0;
+			$this->foreignKey = 0;
 		}
-		if ($this->_indexForId == 0 || $this->rebuildOnUpdate) {
+		if ($this->foreignKey == 0 || $this->settings[$this->model->name]['rebuildOnUpdate']) {
 			$this->_index = $this->_indexData();
 		}
 		return true;
@@ -38,40 +40,50 @@ class SearchableBehavior extends ModelBehavior {
 	function afterSave() {
 		if ($this->_index !== false) {
 			if (!$this->SearchIndex) {
-				App::import('Model','SearchIndex');
-				$this->SearchIndex = new SearchIndex();
+				$this->SearchIndex = ClassRegistry::init('SearchIndex');
 			}
-			if ($this->_indexForId == 0) {
-				$this->_indexForId = $this->model->getLastInsertID();
+			if ($this->foreignKey == 0) {
+				$this->foreignKey = $this->model->getLastInsertID();
 				$this->SearchIndex->save(
 					array(
 						'SearchIndex' => array(
 							'model' => $this->model->name,
-							'association_key' => $this->_indexForId,
+							'association_key' => $this->foreignKey,
 							'data' => $this->_index
 						)
 					)
 				);
 			} else {
-				$this->SearchIndex->saveField('data',$this->_index);
+				$searchEntry = $this->SearchIndex->find('first',array('fields'=>array('id'),'conditions'=>array('model'=>$this->model->name,'association_key'=>$this->foreignKey)));
+				$this->SearchIndex->save(
+					array(
+						'SearchIndex' => array(
+							'id' => empty($searchEntry) ? 0 : $searchEntry['SearchIndex']['id'],
+							'model' => $this->model->name,
+							'association_key' => $this->foreignKey,
+							'data' => $this->_index
+						)
+					)
+				);				
 			}
 			$this->_index = false;
-			$this->_indexForId = false;
+			$this->foreignKey = false;
 		}
 		return true;
 	}
 	
 	function _index() {
-		$index = '';
+		$index = array();
 		$data = $this->model->data[$this->model->name];
 		foreach ($data as $key => $value) {
 			if (is_string($value)) {
 				$columns = $this->model->getColumnTypes();
-				if (isset($columns[$key]) && in_array($columns[$key],array('text','varchar','char'))) {
-					$index = $index . ' ' . strip_tags(html_entity_decode($value,ENT_COMPAT,'UTF-8'));
+				if ($key != $this->model->primaryKey && isset($columns[$key]) && in_array($columns[$key],array('text','varchar','char','string'))) {
+					$index []= strip_tags(html_entity_decode($value,ENT_COMPAT,'UTF-8'));
 				}
 			}
-		}		
+		}
+		$index = join('. ',$index);
 		$index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
 		$index = preg_replace('/[\ ]+/',' ',$index);
 		return $index;
@@ -82,10 +94,16 @@ class SearchableBehavior extends ModelBehavior {
 			App::import('Model','SearchIndex');
 			$this->SearchIndex = new SearchIndex();
 		}
-		$this->SearchIndex->searchModels($this->model->name);		
-		if (!isset($findOptions['conditions'])) $findOptions['conditions'] = array();
-		$findOptions['conditions'] = array_merge($findOptions['conditions'],array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)"));
-		return $this->SearchIndex->find('all',$findOptions);	
+		$this->SearchIndex->searchModels($model->name);
+		if (!isset($findOptions['conditions'])) {
+			$findOptions['conditions'] = array();
+		}
+		App::import('Core', 'Sanitize');
+		$q = Sanitize::escape($q);
+		$findOptions['conditions'] = array_merge(
+			$findOptions['conditions'], array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)")
+		);
+		return $this->SearchIndex->find('all', $findOptions);		
 	}
 	
 }
