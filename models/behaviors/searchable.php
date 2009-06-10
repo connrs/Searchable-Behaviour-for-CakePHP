@@ -88,11 +88,19 @@ class SearchableBehavior extends ModelBehavior {
 		$index = preg_replace('/[\ ]+/',' ',$index);
 		return $index;
 	}
+
+	function afterDelete(&$model) {
+		if (!$this->SearchIndex) {
+			$this->SearchIndex = ClassRegistry::init('SearchIndex');
+		}
+		$conditions = array('model'=>$model->alias, 'association_key'=>$model->id);
+		$this->SearchIndex->deleteAll($conditions);
+	}
+	
 	
 	function search(&$model, $q, $findOptions = array()) {
 		if (!$this->SearchIndex) {
-			App::import('Model','SearchIndex');
-			$this->SearchIndex = new SearchIndex();
+			$this->SearchIndex = ClassRegistry::init('SearchIndex');
 		}
 		$this->SearchIndex->searchModels($model->name);
 		if (!isset($findOptions['conditions'])) {
