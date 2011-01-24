@@ -1,7 +1,6 @@
 <?php
 class SearchIndex extends AppModel {
 	var $name = 'SearchIndex';
-	var $useTable = 'search_index';
 	private $models = array();
 
 	private function bindTo($model) {
@@ -51,6 +50,16 @@ class SearchIndex extends AppModel {
 			}
 		}
 		return $queryData; 	
+	}
+
+	function afterFind($results, $primary) {
+		foreach($results as $x => $result) {
+			if (!empty($result['SearchIndex'])) {
+				$Model = ClassRegistry::init($result['SearchIndex']['model']);
+				$results[$x]['SearchIndex']['displayField'] = $Model->displayField;
+			}
+		}
+		return $results;
 	}
 }
 ?>
