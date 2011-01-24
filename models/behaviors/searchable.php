@@ -25,9 +25,10 @@ class SearchableBehavior extends ModelBehavior {
 		}
 	}
 	
-	function beforeSave() {
+	function beforeSave(&$model) {
+		$this->model =& $model;
 		if ($this->model->id) {
-			$this->foreignKey = $this->model->id;		
+			$this->foreignKey = $this->model->id;
 		} else {
 			$this->foreignKey = 0;
 		}
