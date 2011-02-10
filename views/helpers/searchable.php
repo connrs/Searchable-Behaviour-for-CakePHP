@@ -28,7 +28,7 @@ class SearchableHelper extends Helper {
 		if ($displayField == 'id') {
 			$title = $model;
 		} else {
-			$title = $result[$model][$displayField];
+			$title = $model.': '.$result[$model][$displayField];
 		}
 		return $this->Html->link($title, array('controller'=>$controller, 'action'=>$action, $id));
 	}
