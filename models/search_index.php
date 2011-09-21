@@ -67,9 +67,9 @@ class SearchIndex extends AppModel {
         foreach ($fuzzies as $i => $fuzz) {
             $fuzzies[$i] = preg_quote($fuzz);
             if ($fuzz == ' ') {
-                $fuzzies[$i] = '[[:blank:]]*';
+                $fuzzies[$i] = '[:blank:]*';
             } else {
-                $fuzzies[$i] = $fuzz . '[[:alnum:]]*';
+                $fuzzies[$i] = $fuzz . '[:alnum:]*';
             }
         }
         $query = join('', $fuzzies);
