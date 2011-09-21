@@ -9,7 +9,7 @@ class SearchableBehavior extends ModelBehavior {
         $this->_set($settings);
     }
     
-    function _indexData(&$Model) {
+    function processData(&$Model) {
         if (method_exists($Model, 'indexData')) {
             return $Model->indexData();
         } else {
@@ -24,7 +24,7 @@ class SearchableBehavior extends ModelBehavior {
             $this->foreignKey = 0;
         }
         if ($this->foreignKey == 0 || $this->rebuildOnUpdate) {
-            $this->_index = $this->_indexData($Model);
+            $this->_index = $this->processData($Model);
         }
         return true;
     }
