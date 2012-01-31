@@ -32,7 +32,7 @@ class SearchableBehavior extends ModelBehavior {
     function afterSave(&$Model) {
         if ($this->_index !== false) {
             if (!$this->SearchIndex) {
-                $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', false);
+                $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
             }
             if ($this->foreignKey == 0) {
                 $this->foreignKey = $Model->getLastInsertID();
