@@ -1,15 +1,18 @@
 <?php
 class SearchableBehavior extends ModelBehavior {
-    var $foreignKey = false;
-    var $_index = false;
-    var $rebuildOnUpdate = true;
-    var $SearchIndex = null;
+    public $__defaultSettings = array(
+        'foreignKey' => false,
+        '_index' => false,
+        'rebuildOnUpdate' => true
+    );
+    public $settings = array();
+    public $SearchIndex;
 
-    function setup(&$Model, $settings = array()) {
-        $this->_set($settings);
+    function setup(Model $Model, $settings = array()) {
+        $this->settings[$Model->alias] = $settings + $this->__defaultSettings;
     }
     
-    function processData(&$Model) {
+    function processData(Model $Model) {
         if (method_exists($Model, 'indexData')) {
             return $Model->indexData();
         } else {
@@ -17,54 +20,59 @@ class SearchableBehavior extends ModelBehavior {
         }
     }
     
-    function beforeSave(&$Model) {
+    function beforeSave(Model $Model) {
         if ($Model->id) {
-            $this->foreignKey = $Model->id;
+            $this->settings[$Model->alias]['foreignKey'] = $Model->id;
         } else {
-            $this->foreignKey = 0;
+            $this->settings[$Model->alias]['foreignKey'] = 0;
         }
-        if ($this->foreignKey == 0 || $this->rebuildOnUpdate) {
-            $this->_index = $this->processData($Model);
+        if ($this->settings[$Model->alias]['foreignKey'] == 0 || $this->settings[$Model->alias]['rebuildOnUpdate']) {
+            $this->settings[$Model->alias]['_index'] = $this->processData($Model);
         }
         return true;
     }
     
-    function afterSave(&$Model) {
-        if ($this->_index !== false) {
+    function afterSave(Model $Model) {
+        if ($this->settings[$Model->alias]['_index'] !== false) {
             if (!$this->SearchIndex) {
                 $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
             }
-            if ($this->foreignKey == 0) {
-                $this->foreignKey = $Model->getLastInsertID();
+            if ($this->settings[$Model->alias]['foreignKey'] == 0) {
+                $this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
                 $this->SearchIndex->save(
                     array(
                         'SearchIndex' => array(
                             'model' => $Model->alias,
-                            'association_key' => $this->foreignKey,
-                            'data' => $this->_index
+                            'association_key' => $this->settings[$Model->alias]['foreignKey'],
+                            'data' => $this->settings[$Model->alias]['_index']
                         )
                     )
                 );
             } else {
-                $searchEntry = $this->SearchIndex->find('first',array('fields'=>array('id'),'conditions'=>array('model'=>$Model->alias,'association_key'=>$this->foreignKey)));
+                $searchEntry = $this->SearchIndex->find('first',array(
+                    'conditions' => array(
+                        'model' => $Model->alias,
+                        'association_key'=>$this->settings[$Model->alias]['foreignKey']
+                    )
+                ));
                 $this->SearchIndex->save(
                     array(
                         'SearchIndex' => array(
                             'id' => empty($searchEntry) ? 0 : $searchEntry['SearchIndex']['id'],
                             'model' => $Model->alias,
-                            'association_key' => $this->foreignKey,
-                            'data' => $this->_index
+                            'association_key' => $this->settings[$Model->alias]['foreignKey'],
+                            'data' => $this->settings[$Model->alias]['_index']
                         )
                     )
                 );              
             }
-            $this->_index = false;
-            $this->foreignKey = false;
+            $this->settings[$Model->alias]['_index'] = false;
+            $this->settings[$Model->alias]['foreignKey'] = false;
         }
         return true;
     }
     
-    function index(&$Model) {
+    function index(Model $Model) {
         $index = array();
         $data = $Model->data[$Model->alias];
         foreach ($data as $key => $value) {
@@ -81,17 +89,17 @@ class SearchableBehavior extends ModelBehavior {
         return $index;
     }
 
-    function afterDelete(&$Model) {
+    function afterDelete(Model $Model) {
         if (!$this->SearchIndex) {
-            $this->SearchIndex = ClassRegistry::init('SearchIndex');
+            $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
         }
         $conditions = array('model'=>$Model->alias, 'association_key'=>$Model->id);
         $this->SearchIndex->deleteAll($conditions);
     }
 
-    function search(&$Model, $q, $findOptions = array()) {
+    function search(Model $Model, $q, $findOptions = array()) {
         if (!$this->SearchIndex) {
-            $this->SearchIndex = ClassRegistry::init('SearchIndex');
+            $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
         }
         $this->SearchIndex->searchModels($Model->name);
         if (!isset($findOptions['conditions'])) {
@@ -106,4 +114,3 @@ class SearchableBehavior extends ModelBehavior {
     }
     
 }
-?>
