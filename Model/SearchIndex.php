@@ -63,7 +63,7 @@ class SearchIndex extends SearchableAppModel {
     }
 
     function fuzzyize($query) {
-        $query = preg_replace('/\s+/i', ' ', $query);
+        /*$query = preg_replace('/\s+/i', ' ', $query);
         $fuzzies = str_split($query);
         foreach ($fuzzies as $i => $fuzz) {
             $fuzzies[$i] = preg_quote($fuzz);
@@ -73,8 +73,10 @@ class SearchIndex extends SearchableAppModel {
             } else {
                 $fuzzies[$i] = $fuzz . '[a-zA-Z0-9]*';
             }
-        }
-        $query = join('', $fuzzies);
+        }*/
+        //$query = join('', $fuzzies);
+        //$query = preg_replace('/\s+/i', '\s*', $query);
+        $query = preg_replace('/\s+/', '\s*', $query);
         return $query;
     }
 }
