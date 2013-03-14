@@ -96,8 +96,17 @@ class SearchableBehavior extends ModelBehavior {
     private function index(Model $Model) {
         $index = array();
         $data = $Model->data[$Model->alias];
+
+        if ($this->settings[$Model->name]['fields'] === '*') {
+            $this->settings[$Model->name]['fields'] = array();
+        }
+
+        if (is_string($this->settings[$Model->name]['fields'])) {
+            $this->settings[$Model->name]['fields'] = array($this->settings[$Model->name]['fields']);
+        }
+
         foreach ($data as $key => $value) {
-            if ($this->settings[$Model->name]['fields'] === '*' || (is_array($this->settings[$Model->name]['fields']) && in_array($key, $this->settings[$Model->name]['fields']))) {
+            if ((is_array($this->settings[$Model->name]['fields']) && count($this->settings[$Model->name]['fields']) < 1) || (is_array($this->settings[$Model->name]['fields']) && in_array($key, $this->settings[$Model->name]['fields']))) {
                 if (is_string($value)) {
                     $columns = $Model->getColumnTypes();
                     if ($key != $Model->primaryKey && isset($columns[$key]) && in_array($columns[$key],array('text','varchar','char','string'))) {
@@ -106,6 +115,7 @@ class SearchableBehavior extends ModelBehavior {
                 }
             }
         }
+
         $index = join('. ',$index);
         $index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
         $index = preg_replace('/[\ ]+/',' ',$index);
