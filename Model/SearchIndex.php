@@ -1,5 +1,7 @@
 <?php
 class SearchIndex extends SearchableAppModel {
+    public $name = 'SearchIndex';
+    public $useTable = 'search_indices';
     private $models = array();
 
     private function bindTo($model) {
@@ -16,7 +18,7 @@ class SearchIndex extends SearchableAppModel {
         );
     }
 
-    function searchModels($models = array()) {
+    public function searchModels($models = array()) {
         if (is_string($models)) $models = array($models);
         $this->models = $models;
         foreach ($models as $model) {
@@ -24,7 +26,7 @@ class SearchIndex extends SearchableAppModel {
         }
     }
 
-    function beforeFind($queryData) {
+    public function beforeFind($queryData) {
         $models_condition = false;
         if (!empty($this->models)) {
             $models_condition = array();
@@ -50,7 +52,7 @@ class SearchIndex extends SearchableAppModel {
         return $queryData;  
     }
 
-    function afterFind($results, $primary) {
+    public function afterFind($results, $primary = false) {
         if ($primary) {
             foreach($results as $x => $result) {
                 if (!empty($result['SearchIndex'])) {
@@ -62,20 +64,7 @@ class SearchIndex extends SearchableAppModel {
         return $results;
     }
 
-    function fuzzyize($query) {
-        /*$query = preg_replace('/\s+/i', ' ', $query);
-        $fuzzies = str_split($query);
-        foreach ($fuzzies as $i => $fuzz) {
-            $fuzzies[$i] = preg_quote($fuzz);
-            if ($fuzz == ' ') {
-                //$fuzzies[$i] = '[:blank:]*';
-                $fuzzies[$i] = '\s*';
-            } else {
-                $fuzzies[$i] = $fuzz . '[a-zA-Z0-9]*';
-            }
-        }*/
-        //$query = join('', $fuzzies);
-        //$query = preg_replace('/\s+/i', '\s*', $query);
+    public function fuzzyize($query) {
         $query = preg_replace('/\s+/', '\s*', $query);
         return $query;
     }

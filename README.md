@@ -8,7 +8,7 @@ For example, a fulltext search allows end users to use boolean expressions (eg. 
 
 To setup this behaviour you will need to create the following MySQL table 
 
-    CREATE TABLE `search_index` (
+    CREATE TABLE `search_indices` (
     	`id` int(11) NOT NULL auto_increment,
     	`association_key` varchar(36) NOT NULL,
     	`model` varchar(128) collate utf8_unicode_ci NOT NULL,
@@ -19,6 +19,50 @@ To setup this behaviour you will need to create the following MySQL table
     	KEY `association_key` (`association_key`,`model`),
     	FULLTEXT KEY `data` (`data`)
     ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+### Model setup
+
+To create indices for model data, you have to add the Searchable behavior to the model.
+
+#### Create index all model fields
+
+    <?php
+    class Post extends AppModel {
+        var $name = 'Post';
+        var $actsAs = array('Searchable.Searchable');
+    }
+    ?>
+
+#### Create index for only for headline and text fields:
+
+    <?php
+    class Post extends AppModel {
+        var $name = 'Post';
+        var $actsAs = array(
+            'Searchable.Searchable' => array(
+                'fields' => array(
+                    'headline',
+                    'text',
+                )
+            )
+        );
+    }
+    ?>
+
+#### Stopwords:
+
+Stopwords can be found in the config/stopwords.php file
+
+    <?php
+    class Post extends AppModel {
+        var $name = 'Post';
+        var $actsAs = array(
+            'Searchable.Searchable' => array(
+                'stopwords_lang' => 'german'
+            )
+        );
+    }
+    ?>
 
 ## Usage
 
@@ -51,7 +95,11 @@ To provide a custom indexing function, you can define your own indexData() funct
     class Comment extends AppModel {
     
     	var $name = 'Comment';
-    	var $actsAs = array('Searchable');
+    	var $actsAs = array(
+            'Searchable.Searchable' => array(
+                'fields' => array('text')
+            )
+        );
     	
     	function indexData() {
     		$index = $this->data['Comment']['text'];
@@ -60,9 +108,33 @@ To provide a custom indexing function, you can define your own indexData() funct
     }
     ?>
 
+### Rebuild index from shell
+
+To rebuild the index from shell, you can run the wizard
+
+    app/Console/cake Searchable.Searchable index
+
+Or you can speficy for which modely you want to rebuild the index
+
+    app/Console/cake Searchable.Searchable index <database config> <model name>
+
+Rebuild index for all models with the searchable behaviour
+
+    app/Console/cake Searchable.Searchable index default all
+
+Rebuild index for post and comments models
+
+    app/Console/cake Searchable.Searchable index default Post,Comment
+
+Rebuild index only for comments models
+
+    app/Console/cake Searchable.Searchable index default Comment
+
+
  [1]: #Setup
  [2]: #Usage
  [3]: #Model
  [4]: #The_searchable_model
  [5]: #Indexing_data
+ [6]: #Rebuild_index_from_shell
 

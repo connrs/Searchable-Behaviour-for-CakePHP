@@ -3,16 +3,37 @@ class SearchableBehavior extends ModelBehavior {
     public $__defaultSettings = array(
         'foreignKey' => false,
         '_index' => false,
-        'rebuildOnUpdate' => true
+        'rebuildOnUpdate' => true,
+        'fields' => '*',
+        'stopwords_lang' => 'german'
     );
     public $settings = array();
+    public $stopwords = array();
     public $SearchIndex;
+    public $model;
 
-    function setup(Model $Model, $settings = array()) {
-        $this->settings[$Model->alias] = $settings + $this->__defaultSettings;
+    public function setup(Model $Model, $config = array()) {
+        $this->settings[$Model->alias] = array_merge($this->__defaultSettings, $config);
+        $this->model =& $Model;
+
+        Configure::load('Searchable.stopwords');
+        $stopwords = Configure::read('Searchable.stopwords');
+        $stopwords_lang = $this->settings[$Model->name]['stopwords_lang'];
+        if (isset($stopwords[$stopwords_lang]) && is_array($stopwords[$stopwords_lang])) {
+            $this->stopwords = $stopwords[$stopwords_lang];
+            $this->prepareStopwords();
+        }
+    }
+
+    private function prepareStopwords() {
+        $stopwords = array();
+        foreach ($this->stopwords as $word) {
+            $stopwords[md5($word)] = $word;
+        }
+        $this->stopwords = $stopwords;
     }
     
-    function processData(Model $Model) {
+    private function processData(Model $Model) {
         if (method_exists($Model, 'indexData')) {
             return $Model->indexData();
         } else {
@@ -20,7 +41,7 @@ class SearchableBehavior extends ModelBehavior {
         }
     }
     
-    function beforeSave(Model $Model) {
+    public function beforeSave(Model $Model) {
         if ($Model->id) {
             $this->settings[$Model->alias]['foreignKey'] = $Model->id;
         } else {
@@ -32,7 +53,7 @@ class SearchableBehavior extends ModelBehavior {
         return true;
     }
     
-    function afterSave(Model $Model) {
+    public function afterSave(Model $Model, $created) {
         if ($this->settings[$Model->alias]['_index'] !== false) {
             if (!$this->SearchIndex) {
                 $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
@@ -72,24 +93,49 @@ class SearchableBehavior extends ModelBehavior {
         return true;
     }
     
-    function index(Model $Model) {
+    private function index(Model $Model) {
         $index = array();
         $data = $Model->data[$Model->alias];
+
+        if ($this->settings[$Model->name]['fields'] === '*') {
+            $this->settings[$Model->name]['fields'] = array();
+        }
+
+        if (is_string($this->settings[$Model->name]['fields'])) {
+            $this->settings[$Model->name]['fields'] = array($this->settings[$Model->name]['fields']);
+        }
+
         foreach ($data as $key => $value) {
-            if (is_string($value)) {
-                $columns = $Model->getColumnTypes();
-                if ($key != $Model->primaryKey && isset($columns[$key]) && in_array($columns[$key],array('text','varchar','char','string'))) {
-                    $index []= strip_tags(html_entity_decode($value,ENT_COMPAT,'UTF-8'));
+            if ((is_array($this->settings[$Model->name]['fields']) && count($this->settings[$Model->name]['fields']) < 1) || (is_array($this->settings[$Model->name]['fields']) && in_array($key, $this->settings[$Model->name]['fields']))) {
+                if (is_string($value)) {
+                    $columns = $Model->getColumnTypes();
+                    if ($key != $Model->primaryKey && isset($columns[$key]) && in_array($columns[$key],array('text','varchar','char','string'))) {
+                        $index []= strip_tags(html_entity_decode($value,ENT_COMPAT,'UTF-8'));
+                    }
                 }
             }
         }
+
         $index = join('. ',$index);
         $index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
         $index = preg_replace('/[\ ]+/',' ',$index);
+        $index = $this->removeStopwords($index);
         return $index;
     }
 
-    function afterDelete(Model $Model) {
+    private function removeStopwords($index) {
+        $words = explode(' ', $index);
+        foreach ($words as $word) {
+            if (isset($this->stopwords[md5($word)])) {
+                $search = ' ' . $word . ' ';
+                $index = str_replace($search, ' ', $index);
+            }
+        }
+
+        return $index;
+    }
+
+    public function afterDelete(Model $Model) {
         if (!$this->SearchIndex) {
             $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
         }
@@ -97,7 +143,7 @@ class SearchableBehavior extends ModelBehavior {
         $this->SearchIndex->deleteAll($conditions);
     }
 
-    function search(Model $Model, $q, $findOptions = array()) {
+    public function search(Model $Model, $q, $findOptions = array()) {
         if (!$this->SearchIndex) {
             $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
         }
@@ -105,7 +151,7 @@ class SearchableBehavior extends ModelBehavior {
         if (!isset($findOptions['conditions'])) {
             $findOptions['conditions'] = array();
         }
-        App::import('Core', 'Sanitize');
+        App::uses('Sanitize', 'Utility');
         $q = Sanitize::escape($q);
         $findOptions['conditions'] = array_merge(
             $findOptions['conditions'], array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)")
