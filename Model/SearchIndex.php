@@ -1,82 +1,93 @@
 <?php
-class SearchIndex extends SearchableAppModel {
-    private $models = array();
+class SearchIndex extends SearchIndexAppModel {
+	/**
+	 * name of the table used
+	 */
+	public $useTable = 'search_index';
 
-    private function bindTo($model) {
-        $this->bindModel( 
-            array(
-                'belongsTo' => array(
-                    $model => array (
-                        'className' => $model,
-                        'conditions' => 'SearchIndex.model = \''.$model.'\'',
-                        'foreignKey' => 'association_key'
-                    )
-                )
-            ),false 
-        );
-    }
+	/**
+	 * placeholder for models tracked/used
+	 */
+	private $models = array();
 
-    function searchModels($models = array()) {
-        if (is_string($models)) $models = array($models);
-        $this->models = $models;
-        foreach ($models as $model) {
-            $this->bindTo($model);
-        }
-    }
+	/**
+	 * custom auto-bind function
+	 */
+	private function bindTo($model) {
+		$this->bindModel(
+			array(
+				'belongsTo' => array(
+					$model => array (
+						'className' => $model,
+						'conditions' => 'SearchIndex.model = \''.$model.'\'',
+						'foreignKey' => 'association_key'
+					)
+				)
+			),false
+		);
+	}
 
-    function beforeFind($queryData) {
-        $models_condition = false;
-        if (!empty($this->models)) {
-            $models_condition = array();
-            foreach ($this->models as $model) {
-                $Model = ClassRegistry::init($model);
-                $models_condition[] = $model . '.'.$Model->primaryKey.' IS NOT NULL'; 
-            }
-        }
+	public function searchModels($models = array()) {
+		if (is_string($models)) $models = array($models);
+		$this->models = $models;
+		foreach ($models as $model) {
+			$this->bindTo($model);
+		}
+	}
 
-        if (isset($queryData['conditions'])) {
-            if ($models_condition) {
-                if (is_string($queryData['conditions'])) {
-                    $queryData['conditions'] .= ' AND (' . join(' OR ',$models_condition) . ')';
-                } else {
-                    $queryData['conditions'][] = array('OR' => $models_condition);
-                }
-            }
-        } else {
-            if ($models_condition) {
-                $queryData['conditions'][] = array('OR' => $models_condition);
-            }
-        }
-        return $queryData;  
-    }
+	public function beforeFind($queryData) {
+		$models_condition = false;
+		if (!empty($this->models)) {
+			$models_condition = array();
+			foreach ($this->models as $model) {
+				$Model = ClassRegistry::init($model);
+				$models_condition[] = $model . '.'.$Model->primaryKey.' IS NOT NULL';
+			}
+		}
 
-    function afterFind($results, $primary) {
-        if ($primary) {
-            foreach($results as $x => $result) {
-                if (!empty($result['SearchIndex'])) {
-                    $Model = ClassRegistry::init($result['SearchIndex']['model']);
-                    $results[$x]['SearchIndex']['displayField'] = $Model->displayField;
-                }
-            }
-        }
-        return $results;
-    }
+		if (isset($queryData['conditions'])) {
+			if ($models_condition) {
+				if (is_string($queryData['conditions'])) {
+					$queryData['conditions'] .= ' AND (' . join(' OR ',$models_condition) . ')';
+				} else {
+					$queryData['conditions'][] = array('OR' => $models_condition);
+				}
+			}
+		} else {
+			if ($models_condition) {
+				$queryData['conditions'][] = array('OR' => $models_condition);
+			}
+		}
+		return $queryData;
+	}
 
-    function fuzzyize($query) {
-        /*$query = preg_replace('/\s+/i', ' ', $query);
-        $fuzzies = str_split($query);
-        foreach ($fuzzies as $i => $fuzz) {
-            $fuzzies[$i] = preg_quote($fuzz);
-            if ($fuzz == ' ') {
-                //$fuzzies[$i] = '[:blank:]*';
-                $fuzzies[$i] = '\s*';
-            } else {
-                $fuzzies[$i] = $fuzz . '[a-zA-Z0-9]*';
-            }
-        }*/
-        //$query = join('', $fuzzies);
-        //$query = preg_replace('/\s+/i', '\s*', $query);
-        $query = preg_replace('/\s+/', '\s*', $query);
-        return $query;
-    }
+	public function afterFind($results, $primary) {
+		if ($primary) {
+			foreach($results as $x => $result) {
+				if (!empty($result['SearchIndex']['model'])) {
+					$Model = ClassRegistry::init($result['SearchIndex']['model']);
+					$results[$x]['SearchIndex']['displayField'] = $Model->displayField;
+				}
+			}
+		}
+		return $results;
+	}
+
+	public function fuzzyize($query) {
+		/*$query = preg_replace('/\s+/i', ' ', $query);
+		$fuzzies = str_split($query);
+		foreach ($fuzzies as $i => $fuzz) {
+			$fuzzies[$i] = preg_quote($fuzz);
+			if ($fuzz == ' ') {
+				//$fuzzies[$i] = '[:blank:]*';
+				$fuzzies[$i] = '\s*';
+			} else {
+				$fuzzies[$i] = $fuzz . '[a-zA-Z0-9]*';
+			}
+		}*/
+		//$query = join('', $fuzzies);
+		//$query = preg_replace('/\s+/i', '\s*', $query);
+		$query = preg_replace('/\s+/', '\s*', $query);
+		return $query;
+	}
 }
