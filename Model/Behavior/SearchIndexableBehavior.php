@@ -1,9 +1,11 @@
 <?php
 class SearchIndexableBehavior extends ModelBehavior {
 	public $__defaultSettings = array(
-		'foreignKey' => false,
-		'_index' => false,
-		'rebuildOnUpdate' => true
+		'foreignKey' => false, // primaryKey to save against
+		'savedData' => false, // array of what was passed into save()
+		'_index' => false, // string to store as data
+		'queryAfterSave' => true, // slower, but less likely to corrupt search records
+		'rebuildOnUpdate' => true, // do we want to update the record? (yeah!)
 	);
 	public $settings = array();
 	public $SearchIndex;
@@ -12,11 +14,19 @@ class SearchIndexableBehavior extends ModelBehavior {
 		$this->settings[$Model->alias] = $settings + $this->__defaultSettings;
 	}
 
-	public function processData(Model $Model) {
+	public function processData(Model $Model, $data = array()) {
+		$backupData = false;
+		if (!empty($data)) {
+			$backupData = $Model->data;
+			$Model->data = $data;
+		}
 		if (method_exists($Model, 'indexData')) {
 			return $Model->indexData();
 		} else {
 			return $this->index($Model);
+		}
+		if (!empty($backupData)) {
+			$Model->data = $backupData;
 		}
 	}
 
@@ -27,18 +37,25 @@ class SearchIndexableBehavior extends ModelBehavior {
 			$this->settings[$Model->alias]['foreignKey'] = 0;
 		}
 		if ($this->settings[$Model->alias]['foreignKey'] == 0 || $this->settings[$Model->alias]['rebuildOnUpdate']) {
-			$this->settings[$Model->alias]['_index'] = $this->processData($Model);
+			$this->settings[$Model->alias]['savedData'] = $Model->data;
 		}
 		return true;
 	}
 
 	public function afterSave(Model $Model) {
+		if (empty($this->settings[$Model->alias]['foreignKey'])) {
+			$this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
+		}
+		if (!empty($this->settings[$Model->alias]['queryAfterSave'])) {
+			$data = $Model->read(null, $this->settings[$Model->alias]['foreignKey']);
+			$this->settings[$Model->alias]['_index'] = $this->processData($Model, $data);
+		} else {
+			//$data = $this->settings[$Model->alias]['savedData'];
+			$this->settings[$Model->alias]['_index'] = $this->processData($Model);
+		}
 		if ($this->settings[$Model->alias]['_index'] !== false) {
 			if (!$this->SearchIndex) {
 				$this->SearchIndex = ClassRegistry::init('SearchIndex.SearchIndex', true);
-			}
-			if (empty($this->settings[$Model->alias]['foreignKey'])) {
-				$this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
 			}
 			// setup data to save
 			$data = array(
@@ -59,9 +76,10 @@ class SearchIndexableBehavior extends ModelBehavior {
 			// save
 			$this->SearchIndex->create(false);
 			$saved = $this->SearchIndex->save($data, array('validate' => false, 'callbacks' => false));
-			$this->settings[$Model->alias]['_index'] = false;
-			$this->settings[$Model->alias]['foreignKey'] = false;
 		}
+		$this->settings[$Model->alias]['_index'] = false;
+		$this->settings[$Model->alias]['foreignKey'] = false;
+		$this->settings[$Model->alias]['savedData'] = false;
 		return true;
 	}
 
