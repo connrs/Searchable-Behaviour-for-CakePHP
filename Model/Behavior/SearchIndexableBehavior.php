@@ -1,5 +1,17 @@
 <?php
+/**
+ * SearchIndex
+ *
+ * Captures data on save into a string index (in own table)
+ * Setups searchability on that string index
+ */
 class SearchIndexableBehavior extends ModelBehavior {
+
+	/**
+	 * default settings
+	 *
+	 * @var array
+	 */
 	public $__defaultSettings = array(
 		'foreignKey' => false, // primaryKey to save against
 		'savedData' => false, // array of what was passed into save()
@@ -7,29 +19,40 @@ class SearchIndexableBehavior extends ModelBehavior {
 		'queryAfterSave' => true, // slower, but less likely to corrupt search records
 		'rebuildOnUpdate' => true, // do we want to update the record? (yeah!)
 	);
+
+	/**
+	 * placeholder for settings
+	 *
+	 * @var array
+	 */
 	public $settings = array();
+
+	/**
+	 * placeholder
+	 *
+	 * @var array
+	 */
 	public $SearchIndex;
 
+	/**
+	 * Setup the model
+	 *
+	 * @param object Model $Model
+	 * @param array $settings
+	 * @return boolean
+	 */
 	public function setup(Model $Model, $settings = array()) {
 		$this->settings[$Model->alias] = $settings + $this->__defaultSettings;
+		return true;
 	}
 
-	public function processData(Model $Model, $data = array()) {
-		$backupData = false;
-		if (!empty($data)) {
-			$backupData = $Model->data;
-			$Model->data = $data;
-		}
-		if (method_exists($Model, 'indexData')) {
-			return $Model->indexData();
-		} else {
-			return $this->index($Model);
-		}
-		if (!empty($backupData)) {
-			$Model->data = $backupData;
-		}
-	}
-
+	/**
+	 * Standard beforeSave() callback
+	 * Sets up what data will be saved for index in "afterSave"
+	 *
+	 * @param object Model $Model
+	 * @return boolean
+	 */
 	public function beforeSave(Model $Model) {
 		if ($Model->id) {
 			$this->settings[$Model->alias]['foreignKey'] = $Model->id;
@@ -42,7 +65,15 @@ class SearchIndexableBehavior extends ModelBehavior {
 		return true;
 	}
 
-	public function afterSave(Model $Model) {
+	/**
+	 * Standard afterSave() callback
+	 * Saves index data for a record
+	 *
+	 * @param object Model $Model
+	 * @param boolean $created
+	 * @return boolean
+	 */
+	public function afterSave(Model $Model, $created = false) {
 		if (empty($this->settings[$Model->alias]['foreignKey'])) {
 			$this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
 		}
@@ -83,6 +114,43 @@ class SearchIndexableBehavior extends ModelBehavior {
 		return true;
 	}
 
+	/**
+	 * after delete callback
+	 *
+	 * @param object Model $Model
+	 * @return boolean
+	 */
+	public function afterDelete(Model $Model) {
+		if (!$this->SearchIndex) {
+			$this->SearchIndex = ClassRegistry::init('SearchIndex.SearchIndex', true);
+		}
+		$conditions = array('model'=>$Model->alias, 'association_key'=>$Model->id);
+		$this->SearchIndex->deleteAll($conditions);
+	}
+
+	/**
+	 * Detemine what data should be setup as the text index for this saved node
+	 *
+	 * @param object Model $Model
+	 * @param array $data
+	 * @return string $dataString
+	 */
+	public function processData(Model $Model, $data = array()) {
+		$backupData = false;
+		if (!empty($data)) {
+			$backupData = $Model->data;
+			$Model->data = $data;
+		}
+		if (method_exists($Model, 'indexData')) {
+			return $Model->indexData();
+		} else {
+			return $this->index($Model);
+		}
+		if (!empty($backupData)) {
+			$Model->data = $backupData;
+		}
+	}
+
 	public function index(Model $Model) {
 		$index = array();
 		$data = $Model->data[$Model->alias];
@@ -98,14 +166,6 @@ class SearchIndexableBehavior extends ModelBehavior {
 		$index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
 		$index = preg_replace('/[\ ]+/',' ',$index);
 		return $index;
-	}
-
-	public function afterDelete(Model $Model) {
-		if (!$this->SearchIndex) {
-			$this->SearchIndex = ClassRegistry::init('SearchIndex.SearchIndex', true);
-		}
-		$conditions = array('model'=>$Model->alias, 'association_key'=>$Model->id);
-		$this->SearchIndex->deleteAll($conditions);
 	}
 
 	public function search(Model $Model, $q, $findOptions = array()) {

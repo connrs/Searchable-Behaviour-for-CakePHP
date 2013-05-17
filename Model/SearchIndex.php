@@ -1,5 +1,11 @@
 <?php
+/**
+ * SearchIndex
+ *
+ * Model where data is stored for the search index
+ */
 class SearchIndex extends SearchIndexAppModel {
+
 	/**
 	 * name of the table used
 	 */
@@ -27,14 +33,13 @@ class SearchIndex extends SearchIndexAppModel {
 		);
 	}
 
-	public function searchModels($models = array()) {
-		if (is_string($models)) $models = array($models);
-		$this->models = $models;
-		foreach ($models as $model) {
-			$this->bindTo($model);
-		}
-	}
-
+	/**
+	 * beforeFind callback
+	 * correct search with conditions
+	 *
+	 * @param mixed $queryData
+	 * @return mixed $queryData
+	 */
 	public function beforeFind($queryData) {
 		$models_condition = false;
 		if (!empty($this->models)) {
@@ -44,7 +49,6 @@ class SearchIndex extends SearchIndexAppModel {
 				$models_condition[] = $model . '.'.$Model->primaryKey.' IS NOT NULL';
 			}
 		}
-
 		if (isset($queryData['conditions'])) {
 			if ($models_condition) {
 				if (is_string($queryData['conditions'])) {
@@ -61,9 +65,17 @@ class SearchIndex extends SearchIndexAppModel {
 		return $queryData;
 	}
 
-	public function afterFind($results, $primary) {
+	/**
+	 * afterFind callback
+	 * cleanup results data with the SearchIndex children
+	 *
+	 * @param mixed $results array or false
+	 * @param boolean $primary
+	 * @return mixed $results
+	 */
+	public function afterFind($results, $primary = false) {
 		if ($primary) {
-			foreach($results as $x => $result) {
+			foreach ($results as $x => $result) {
 				if (!empty($result['SearchIndex']['model'])) {
 					$Model = ClassRegistry::init($result['SearchIndex']['model']);
 					$results[$x]['SearchIndex']['displayField'] = $Model->displayField;
@@ -71,6 +83,18 @@ class SearchIndex extends SearchIndexAppModel {
 			}
 		}
 		return $results;
+	}
+
+	/**
+	 *
+	 *
+	 */
+	public function searchModels($models = array()) {
+		if (is_string($models)) $models = array($models);
+		$this->models = $models;
+		foreach ($models as $model) {
+			$this->bindTo($model);
+		}
 	}
 
 	public function fuzzyize($query) {
