@@ -1,21 +1,21 @@
 <?php
 /**
- * SearchableHelper 
- * 
+ * SearchIndexHelper
+ *
  * @uses AppHelper
- * @package 
+ * @package
  * @version $id$
  * @copyright See licence
- * @author Paul Connolley {Connrs] <shunuk@gmail.com> 
+ * @author Paul Connolley {Connrs] <shunuk@gmail.com>
  * @license MIT Licence <http://www.opensource.org/licenses/mit-license.php>
  */
-class SearchableHelper extends Helper {
+class SearchIndexHelper extends Helper {
 	var $helpers = array("Html");
 
 	/**
-	 * viewLink 
-	 * 
-	 * @param mixed $result 
+	 * viewLink
+	 *
+	 * @param mixed $result
 	 * @access public
 	 * @return void
 	 */
