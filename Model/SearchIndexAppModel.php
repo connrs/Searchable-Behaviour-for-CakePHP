@@ -1,3 +1,3 @@
 <?php
-class SearchableAppModel extends AppModel {
+class SearchIndexAppModel extends AppModel {
 }
