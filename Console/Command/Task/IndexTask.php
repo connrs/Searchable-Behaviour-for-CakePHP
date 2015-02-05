@@ -35,7 +35,11 @@ class IndexTask extends Shell {
                     App::uses($model, 'Model');
                     if (class_exists($model)) {
                         $tmpModel = new $model();
-                        if (isset($tmpModel->actsAs) && is_array($tmpModel->actsAs) && isset($tmpModel->actsAs['Searchable.Searchable'])) {
+                        # this is flawed and will only work if you set options (i.e. fields) for the Searchable behavior
+                        # if (isset($tmpModel->actsAs) && is_array($tmpModel->actsAs) && isset($tmpModel->actsAs['Searchable.Searchable'])) {
+                        # below is a more accurate way to determine whether or not a particular behavior exists
+                        $behaviors = $tmpModel->Behaviors->loaded();
+                        if ( in_array('Searchable',$behaviors) ) {
                              $this->modelCache[$model] = $tmpModel;
                              $this->modelNames[$k] = $model;
                         } else {
