@@ -35,7 +35,8 @@ class IndexTask extends Shell {
                     App::uses($model, 'Model');
                     if (class_exists($model)) {
                         $tmpModel = new $model();
-                        if (isset($tmpModel->actsAs) && is_array($tmpModel->actsAs) && isset($tmpModel->actsAs['Searchable.Searchable'])) {
+                        $behaviors = $tmpModel->Behaviors->loaded();
+                        if ( in_array('Searchable',$behaviors) ) {
                              $this->modelCache[$model] = $tmpModel;
                              $this->modelNames[$k] = $model;
                         } else {

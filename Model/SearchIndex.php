@@ -3,6 +3,7 @@ class SearchIndex extends SearchableAppModel {
     public $name = 'SearchIndex';
     public $useTable = 'search_indices';
     private $models = array();
+    public $recursive = 1;
 
     private function bindTo($model) {
         $this->bindModel( 
