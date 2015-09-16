@@ -1,0 +1,15 @@
+{
+    "name": "connrs/cakephp-searchable-behaviour",
+    "description": "This behaviour allows Cake developers to make a model fulltext searchable, meaning that the user will be able to perform mysql fulltext search (which powers Wikimedia for example) on the models.",
+    "type": "cakephp-plugin",
+    "require": {
+        "cakephp/cakephp": "~2.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "klarkc",
+            "email": "walker@praiseweb.com.br"
+        }
+    ]
+}
