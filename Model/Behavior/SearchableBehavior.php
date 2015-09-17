@@ -41,7 +41,7 @@ class SearchableBehavior extends ModelBehavior {
         }
     }
     
-    public function beforeSave(Model $Model) {
+    public function beforeSave(Model $Model, $options = array()) {
         if ($Model->id) {
             $this->settings[$Model->alias]['foreignKey'] = $Model->id;
         } else {
@@ -53,7 +53,7 @@ class SearchableBehavior extends ModelBehavior {
         return true;
     }
     
-    public function afterSave(Model $Model, $created) {
+    public function afterSave(Model $Model, $created, $options = array()) {
         if ($this->settings[$Model->alias]['_index'] !== false) {
             if (!$this->SearchIndex) {
                 $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
