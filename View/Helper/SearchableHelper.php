@@ -1,4 +1,5 @@
 <?php
+App::uses('AppHelper', 'View/Helper');
 /**
  * SearchableHelper 
  * 
@@ -9,7 +10,7 @@
  * @author Paul Connolley {Connrs] <shunuk@gmail.com> 
  * @license MIT Licence <http://www.opensource.org/licenses/mit-license.php>
  */
-class SearchableHelper extends Helper {
+class SearchableHelper extends AppHelper {
 	var $helpers = array("Html");
 
 	/**
