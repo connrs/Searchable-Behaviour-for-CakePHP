@@ -152,7 +152,7 @@ class SearchableBehavior extends ModelBehavior {
             $findOptions['conditions'] = array();
         }
         App::uses('Sanitize', 'Utility');
-        $q = Sanitize::escape($q);
+        $q = Sanitize::escape($q, $Model->useDbConfig);
         $findOptions['conditions'] = array_merge(
             $findOptions['conditions'], array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)")
         );
