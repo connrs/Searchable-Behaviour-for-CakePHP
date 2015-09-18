@@ -3,7 +3,7 @@ App::uses('Controller', 'Controller');
 App::uses('Router', 'Routing');
 App::uses('CakeResponse', 'Network');
 App::uses('View', 'View');
-App::uses('SearchableHelper', 'SearchableBehaviour.View/Helper');
+App::uses('SearchableHelper', 'Searchable.View/Helper');
 
 class SearchableHelperTest extends CakeTestCase {
 
