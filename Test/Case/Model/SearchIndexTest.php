@@ -1,6 +1,9 @@
 <?php
+// Core Testing Models
+require_once CAKE . 'Test' . DS . 'Case' . DS . 'Model' . DS . 'models.php';
+
 App::uses('SearchIndex', 'Searchable.Model');
-App::uses('Article', 'Model');
+
 /**
  * SearchIndex Test Case
  */
@@ -31,7 +34,7 @@ class SearchIndexTest extends CakeTestCase {
         $this->Author->Behaviors->load('Searchable.Searchable');
     }
 
-    public function testFind()
+    public function testFind1()
     {
         // Test 1
         $result = $this->SearchIndex->find('all', array(
@@ -39,7 +42,10 @@ class SearchIndexTest extends CakeTestCase {
         ));
         $error = print_r($result, true);
         $this->assertEqual(1, sizeof($result), $error);
+    }
 
+    public function testFind2()
+    {
         // Test 2
         $this->SearchIndex->searchModels(array('Author', 'Article'));
         $result = $this->SearchIndex->find('all', array(
@@ -47,7 +53,10 @@ class SearchIndexTest extends CakeTestCase {
         ));
         $error = print_r($result, true);
         $this->assertEqual(1, sizeof($result), $error);
+    }
 
+    public function testFind3()
+    {
         // Test 3
         $this->SearchIndex->searchModels('Author');
         $result = $this->SearchIndex->find('all', array(
@@ -55,7 +64,10 @@ class SearchIndexTest extends CakeTestCase {
         ));
         $error = print_r($result, true);
         $this->assertEqual(4, sizeof($result), $error);
+    }
 
+    public function testFind4()
+    {
         // Test 4
         $this->SearchIndex->searchModels('Author');
         $result = $this->SearchIndex->find('all');
