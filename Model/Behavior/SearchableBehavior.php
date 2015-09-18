@@ -13,7 +13,7 @@ class SearchableBehavior extends ModelBehavior {
     public $model;
 
     public function setup(Model $Model, $config = array()) {
-        $this->settings[$Model->alias] = array_merge($this->__defaultSettings, $config);
+        $this->settings[$Model->name] = array_merge($this->__defaultSettings, $config);
         $this->model =& $Model;
 
         Configure::load('Searchable.stopwords');
