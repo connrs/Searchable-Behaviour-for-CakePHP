@@ -1,17 +1,51 @@
 <?php
 App::uses('Controller', 'Controller');
+App::uses('Router', 'Routing');
+App::uses('CakeResponse', 'Network');
 App::uses('View', 'View');
-App::uses('SearchableHelper', 'View/Helper');
+App::uses('SearchableHelper', 'SearchableBehaviour.View/Helper');
 
 class SearchableHelperTest extends CakeTestCase {
+
     public function setUp() {
         parent::setUp();
-        $Controller = new Controller();
-        $View = new View($Controller);
-        $this->Searchable = new SearchableHelper($View);
+        $this->Controller = new Controller();
+        $this->View = new View($this->Controller);
+        $this->Searchable = new SearchableHelper($this->View);
     }
 
     public function testviewLink() {
-        // TODO: testViewLink
+
+        // Test 1
+        $data = array(
+            "SearchIndex" => array(
+                "model" => "SearchIndex",
+                "displayField" => "id",
+                "id" => 13,
+                "association_key" => 4
+            )
+        );
+        $result = $this->Searchable->viewLink($data);
+        $expected = '<a href="/search_indices/view/4">SearchIndex</a>';
+        $this->assertEqual($expected, $result);
+
+        // Test 2
+        $data = array(
+            "SearchIndex" => array(
+                "model" => "SearchIndex",
+                "displayField" => "name",
+                "id" => 13,
+                "association_key" => 4,
+                "name" => "Test"
+            )
+        );
+        $result = $this->Searchable->viewLink($data);
+        $expected = '<a href="/search_indices/view/4">SearchIndex: Test</a>';
+        $this->assertEqual($expected, $result);
     }
+
+	public function tearDown() {
+		parent::tearDown();
+		unset($this->Searchable, $this->Controller);
+	}
 }
