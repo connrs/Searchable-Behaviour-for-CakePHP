@@ -1,5 +1,5 @@
 <?php
-class AllApplicationTest extends CakeTestSuite
+class AllSearchableTest extends CakeTestSuite
 {
     public static function suite()
     {
