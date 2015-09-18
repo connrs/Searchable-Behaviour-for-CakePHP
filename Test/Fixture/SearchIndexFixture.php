@@ -4,6 +4,8 @@
  */
 class SearchIndexFixture extends CakeTestFixture {
 
+    public $table = 'search_indices';
+
     /**
     * Fields
     *
