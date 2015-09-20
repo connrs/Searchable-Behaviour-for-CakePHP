@@ -13,7 +13,7 @@ class SearchableBehavior extends ModelBehavior {
     public $model;
 
     public function setup(Model $Model, $config = array()) {
-        $this->settings[$Model->alias] = array_merge($this->__defaultSettings, $config);
+        $this->settings[$Model->name] = array_merge($this->__defaultSettings, $config);
         $this->model =& $Model;
 
         Configure::load('Searchable.stopwords');
@@ -41,7 +41,7 @@ class SearchableBehavior extends ModelBehavior {
         }
     }
     
-    public function beforeSave(Model $Model) {
+    public function beforeSave(Model $Model, $options = array()) {
         if ($Model->id) {
             $this->settings[$Model->alias]['foreignKey'] = $Model->id;
         } else {
@@ -53,7 +53,7 @@ class SearchableBehavior extends ModelBehavior {
         return true;
     }
     
-    public function afterSave(Model $Model, $created) {
+    public function afterSave(Model $Model, $created, $options = array()) {
         if ($this->settings[$Model->alias]['_index'] !== false) {
             if (!$this->SearchIndex) {
                 $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex', true);
@@ -152,7 +152,7 @@ class SearchableBehavior extends ModelBehavior {
             $findOptions['conditions'] = array();
         }
         App::uses('Sanitize', 'Utility');
-        $q = Sanitize::escape($q);
+        $q = Sanitize::escape($q, $Model->useDbConfig);
         $findOptions['conditions'] = array_merge(
             $findOptions['conditions'], array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)")
         );

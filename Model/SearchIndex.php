@@ -56,7 +56,7 @@ class SearchIndex extends SearchableAppModel {
     public function afterFind($results, $primary = false) {
         if ($primary) {
             foreach($results as $x => $result) {
-                if (!empty($result['SearchIndex'])) {
+                if (Hash::get($result, 'SearchIndex.model')) {
                     $Model = ClassRegistry::init($result['SearchIndex']['model']);
                     $results[$x]['SearchIndex']['displayField'] = $Model->displayField;
                 }
