@@ -1,6 +1,6 @@
 <?php
 class IndexTask extends Shell {
-    public $uses = array('SearchIndex');
+    public $uses = array('Searchable.SearchIndex');
     public $tasks = array('DbConfig', 'Model', 'Searchable.ProgressBar');
     public $modelCache = array();
 
