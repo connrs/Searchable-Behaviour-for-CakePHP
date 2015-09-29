@@ -78,7 +78,7 @@ An example usage, using cakephp pagination, natural language search and relevanc
     	$this->SearchIndex->searchModels(array('Post','Comment'));
     	$this->paginate = array(
     		'limit' => 10,
-    		'conditions' =>  "MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)",
+    		'conditions' =>  "MATCH(SearchIndex.data) AGAINST('$q')",
     		'order' => array(
     		    'relevance' => 'desc'
     		)
