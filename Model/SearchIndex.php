@@ -60,15 +60,8 @@ class SearchIndex extends SearchableAppModel {
             $conditions = explode(' AND ', $queryData['conditions']);
             $this->virtualFields['relevance'] = $conditions[0];
         } else {
-            foreach ($queryData['conditions'] as $condition) {
-                foreach ($condition as $operator => $values) {
-                    if (!empty($this->virtualFields['relevance'])) {
-                        $this->virtualFields['relevance'] .= ' AND (' . implode(" $operator ", $values) . ')';
-                    } else {
-                        $this->virtualFields['relevance'] = implode(" $operator ", $values);
-                    }
-                }
-            }
+            // Do nothing, set relevance to 1
+            $this->virtualFields['relevance'] = 1;
         }
 
         return $queryData;  
