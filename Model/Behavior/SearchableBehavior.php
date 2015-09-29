@@ -60,6 +60,7 @@ class SearchableBehavior extends ModelBehavior {
             }
             if ($this->settings[$Model->alias]['foreignKey'] == 0) {
                 $this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
+                $this->SearchIndex->create();
                 $this->SearchIndex->save(
                     array(
                         'SearchIndex' => array(
