@@ -118,6 +118,8 @@ class SearchableBehavior extends ModelBehavior {
         }
 
         $index = join('. ',$index);
+        // Some servers have issues with locale settings, we must set to the cake locale language before calling iconv.
+        setlocale(LC_ALL, Configure::read('Config.language'));
         $index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
         $index = preg_replace('/[\ ]+/',' ',$index);
         $index = $this->removeStopwords($index);
