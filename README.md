@@ -73,14 +73,15 @@ At your disposal, there are several ways to use it:
 You can use the SearchIndex model to do the searches using the regular cake php ** Model->find() **. By default this will search all the subjects (if you have more than one searchable model). To search only ceratin models you can use **SearchIndex->searchModels()** 
 
 An example usage, using cakephp pagination, natural language search and relevance ordering:
+
     <?php
     	$this->SearchIndex->searchModels(array('Post','Comment'));
     	$this->paginate = array(
     		'limit' => 10,
-    		'conditions' =>  "MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)",
-            'order' => array(
-                'relevance' => 'desc'
-            )
+    		'conditions' =>  "MATCH(SearchIndex.data) AGAINST('$q')",
+    		'order' => array(
+    		    'relevance' => 'desc'
+    		)
     	);
     	$this->set('results', $this->paginate('SearchIndex'));
     ?>
