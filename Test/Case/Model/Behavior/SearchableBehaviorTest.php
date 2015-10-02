@@ -16,7 +16,8 @@ class SearchableBehaviorTest extends CakeTestCase {
     public $fixtures = array(
         'plugin.searchable.search_index',
         'core.author',
-        'core.post'
+        'core.post',
+        'core.apple'
     );
 
     /**
@@ -140,7 +141,7 @@ class SearchableBehaviorTest extends CakeTestCase {
 
         // Check if the process deleted the associated SearchIndex
         $result = $this->SearchIndex->find('first', array(
-            'conditions' => array('association_key' => 1)
+            'conditions' => array('model' => 'Author', 'association_key' => 1)
         ));
         $this->assertEqual('0', sizeof($result));
     }

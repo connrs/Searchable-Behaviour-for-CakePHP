@@ -32,7 +32,7 @@ class SearchableBehavior extends ModelBehavior {
         }
         $this->stopwords = $stopwords;
     }
-    
+
     private function processData(Model $Model) {
         if (method_exists($Model, 'indexData')) {
             return $Model->indexData();
@@ -40,7 +40,7 @@ class SearchableBehavior extends ModelBehavior {
             return $this->index($Model);
         }
     }
-    
+
     public function beforeSave(Model $Model, $options = array()) {
         if ($Model->id) {
             $this->settings[$Model->alias]['foreignKey'] = $Model->id;
@@ -52,7 +52,7 @@ class SearchableBehavior extends ModelBehavior {
         }
         return true;
     }
-    
+
     public function afterSave(Model $Model, $created, $options = array()) {
         if ($this->settings[$Model->alias]['_index'] !== false) {
             if (!$this->SearchIndex) {
@@ -60,6 +60,7 @@ class SearchableBehavior extends ModelBehavior {
             }
             if ($this->settings[$Model->alias]['foreignKey'] == 0) {
                 $this->settings[$Model->alias]['foreignKey'] = $Model->getLastInsertID();
+                $this->SearchIndex->create();
                 $this->SearchIndex->save(
                     array(
                         'SearchIndex' => array(
@@ -85,14 +86,14 @@ class SearchableBehavior extends ModelBehavior {
                             'data' => $this->settings[$Model->alias]['_index']
                         )
                     )
-                );              
+                );
             }
             $this->settings[$Model->alias]['_index'] = false;
             $this->settings[$Model->alias]['foreignKey'] = false;
         }
         return true;
     }
-    
+
     private function index(Model $Model) {
         $index = array();
         $data = $Model->data[$Model->alias];
@@ -117,6 +118,8 @@ class SearchableBehavior extends ModelBehavior {
         }
 
         $index = join('. ',$index);
+        // Some servers have issues with locale settings, we must set to the cake locale language before calling iconv.
+        setlocale(LC_ALL, Configure::read('Config.language'));
         $index = iconv('UTF-8', 'ASCII//TRANSLIT', $index);
         $index = preg_replace('/[\ ]+/',' ',$index);
         $index = $this->removeStopwords($index);
@@ -156,7 +159,7 @@ class SearchableBehavior extends ModelBehavior {
         $findOptions['conditions'] = array_merge(
             $findOptions['conditions'], array("MATCH(SearchIndex.data) AGAINST('$q' IN BOOLEAN MODE)")
         );
-        return $this->SearchIndex->find('all', $findOptions);       
+        return $this->SearchIndex->find('all', $findOptions);
     }
-    
+
 }

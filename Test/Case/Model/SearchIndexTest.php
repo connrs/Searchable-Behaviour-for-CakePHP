@@ -16,8 +16,8 @@ class SearchIndexTest extends CakeTestCase {
     */
     public $fixtures = array(
         'plugin.searchable.search_index',
+        'core.apple',
         'core.author',
-        'core.article'
     );
 
 
@@ -32,6 +32,8 @@ class SearchIndexTest extends CakeTestCase {
         $this->SearchIndex = ClassRegistry::init('Searchable.SearchIndex');
         $this->Author = ClassRegistry::init('Author');
         $this->Author->Behaviors->load('Searchable.Searchable');
+        $this->Apple = ClassRegistry::init('Apple');
+        $this->Apple->Behaviors->load('Searchable.Searchable');
     }
 
     public function testFind1()
@@ -47,12 +49,24 @@ class SearchIndexTest extends CakeTestCase {
     public function testFind2()
     {
         // Test 2
-        $this->SearchIndex->searchModels(array('Author', 'Article'));
+        $this->SearchIndex->searchModels(array('Author', 'Apple'));
         $result = $this->SearchIndex->find('all', array(
-            'conditions' => "MATCH(SearchIndex.data) AGAINST('nate' IN BOOLEAN MODE)"
+            'conditions' => "MATCH(SearchIndex.data) AGAINST('red apple')",
+            'order' => array(
+                'relevance' => 'desc'
+            )
         ));
-        $error = print_r($result, true);
-        $this->assertEqual(1, sizeof($result), $error);
+        $expected = array(
+            'id' => 5,
+            'association_key' => 1,
+            'model' => 'Apple',
+            'data' => 'Red 1.Red Apple 1',
+            'created' => '2015-08-26',
+            'modified' => '2015-08-26',
+            'relevance' => '0.8376647233963013',
+            'displayField' => 'name'
+        );
+        $this->assertEqual($expected, Hash::get($result, '0.SearchIndex'));
     }
 
     public function testFind3()

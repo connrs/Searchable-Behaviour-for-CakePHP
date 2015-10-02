@@ -4,6 +4,9 @@ class SearchIndex extends SearchableAppModel {
     public $useTable = 'search_indices';
     private $models = array();
     public $recursive = 1;
+    public $virtualFields = array(
+        'relevance' => null
+    );
 
     private function bindTo($model) {
         $this->bindModel( 
@@ -50,6 +53,17 @@ class SearchIndex extends SearchableAppModel {
                 $queryData['conditions'][] = array('OR' => $models_condition);
             }
         }
+
+        // Add relevance field
+        if (is_string($queryData['conditions'])) {
+            //Remove any other from the conditions just to calculate relevance
+            $conditions = explode(' AND ', $queryData['conditions']);
+            $this->virtualFields['relevance'] = $conditions[0];
+        } else {
+            // Do nothing, set relevance to 1
+            $this->virtualFields['relevance'] = 1;
+        }
+
         return $queryData;  
     }
 
