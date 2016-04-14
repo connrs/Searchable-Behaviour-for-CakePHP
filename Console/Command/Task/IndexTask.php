@@ -4,7 +4,7 @@ class IndexTask extends Shell {
     public $tasks = array('DbConfig', 'Model', 'Searchable.ProgressBar');
     public $modelCache = array();
 
-    protected function execute() {
+    public function execute() {
         if (isset($this->args[0])) {
             $this->connection = $this->args[0];
             $this->out(__('Using database config: %s', $this->connection));
