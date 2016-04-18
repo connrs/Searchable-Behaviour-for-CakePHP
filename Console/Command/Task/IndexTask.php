@@ -99,7 +99,7 @@ class IndexTask extends Shell {
         return;
     }
 
-    private function indexModel($model) {
+    protected function indexModel($model) {
         $results = $this->modelCache[$model]->find('all', array(
             'recursive' => 0
         ));
@@ -119,13 +119,13 @@ class IndexTask extends Shell {
         $this->hr();
     }
 
-    private function indexModels() {
+    protected function indexModels() {
         foreach ($this->modelNames as $model) {
             $this->indexModel($model);
         }
     }
 
-    private function finish() {
+    protected function finish() {
         $this->out('', 1);
         $this->out(__('All indices have been updated :)'), 2);
         $this->hr();
